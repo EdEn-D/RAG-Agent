@@ -1,0 +1,15 @@
+directories:
+  data_directory: data/docs/texts
+  vectorstore_dir: data/embeddings
+  chat_histrory_dir: data/chats
+
+files:
+  queries_path: data/queries.json
+  guide_path: data/guide.json
+
+configs:
+  llm_smol: gpt-4o-mini 
+  llm_large: gpt-4o
+  temp_low: 0
+  temp_med: 0.5
+  temp_high: 1

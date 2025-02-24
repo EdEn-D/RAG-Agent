@@ -1,0 +1,10 @@
+streamlit
+python-dotenv
+openai
+langchain
+langchain_openai
+langchain_chroma
+langgraph
+langgraph-checkpoint-sqlite
+pyprojroot
+git+https://github.com/FelixLabsDev/streamlit-chatbot-interface.git@main#egg=streamlit_view

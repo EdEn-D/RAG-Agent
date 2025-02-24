@@ -1,0 +1,3 @@
+{
+    "system_prompt" : "Answer the following question using the following context: \n\n{context}" 
+}
