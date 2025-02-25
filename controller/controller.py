@@ -14,21 +14,13 @@ load_dotenv(find_dotenv())
 
 class Orchestrator:
     def __init__(self):
+        self.logger.info("Initializing Orchestrator")
         self.config = LoadConfig("configs/config.yml")
         self.logger = logging.getLogger(self.config.package_name)
         self.app = FastAPI()  # Create the FastAPI app instance
-        self.logger.info("Initializing Orchestrator, configuring server...")
 
         self.model = Graph(clean=False, DEBUG=True)
         self.view = View(self.app, self.streamlit_callback)  # Use for Streamlit
-
-    # Callback function for the view which will typically call the model to generate a response
-    def view_callback(self, data_dict):
-        self.logger.info("Inside view_callback - orchestrator")
-        # self.logger.info(f"Data dict: \n{data_dict}")
-        response = self.model.invoke(data_dict["text"])
-        self.view.send_message(response)
-        return response
 
     def streamlit_callback(self, data_dict):
         if data_dict["type"] == "unsupported":

@@ -45,7 +45,6 @@ class Graph:
         self.chat_history_db_path = os.path.join(
             base_path, self.config.chat_histrory_dir, "checkpoints.sqlite"
         )
-        # initilize google sheet # TODO: implement DB bank with prompts and other data
         self.chain = Chain()
 
         if self.DEBUG:
@@ -112,7 +111,6 @@ class Graph:
         # Construct the path to the database file
         os.makedirs(os.path.dirname(self.chat_history_db_path), exist_ok=True)
         conn = sqlite3.connect(self.chat_history_db_path, check_same_thread=False)
-        # TODO: Docs of this function below indicate that it is not ready for production
         memory = SqliteSaver(conn)
 
         # Add nodes
