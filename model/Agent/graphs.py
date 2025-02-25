@@ -16,6 +16,7 @@ from dotenv import load_dotenv, find_dotenv
 from langchain_core.runnables.graph import MermaidDrawMethod
 from pydantic import BaseModel, Field
 import logging
+from langsmith import traceable
 
 load_dotenv(find_dotenv())
 
@@ -75,14 +76,24 @@ class Graph:
         cursor.execute("DELETE FROM writes WHERE thread_id = ?", (thread_id,))
         conn.commit()
         conn.close()
-
+    
+    @traceable
     def general_node(self, state: MessageState) -> MessageState:
         if self.DEBUG: self.logger.info("Inside general_node")
-        """Generate a response for a general query."""
         message = state["messages"][-1].content
         history = state["messages"]
 
         generated_response = self.chain.general_chain(message, history=history)
+
+        return {"messages": [AIMessage(content=generated_response)]}
+    
+    @traceable
+    def rag_node(self, state: MessageState) -> MessageState:
+        if self.DEBUG: self.logger.info("Inside rag_node")
+        message = state["messages"][-1].content
+        history = state["messages"]
+
+        generated_response = self.chain.rag_chain(message, history=history)
 
         return {"messages": [AIMessage(content=generated_response)]}
 
@@ -105,16 +116,16 @@ class Graph:
         memory = SqliteSaver(conn)
 
         # Add nodes
-        workflow.add_node("general_node", self.general_node)
-        workflow.set_entry_point("general_node")
-        workflow.add_edge("general_node", END)
+        workflow.add_node("rag_node", self.rag_node)
+        workflow.set_entry_point("rag_node")
+        workflow.add_edge("rag_node", END)
 
         # Compile the graph
         app = workflow.compile(checkpointer=memory)
         # self._get_graph_image(app)
         return app
 
-
+    @traceable
     def invoke_graph(self, input: str, thread_id: str, type: str = "Human") -> str:
         conn = sqlite3.connect(self.chat_history_db_path, check_same_thread=False)
         thread = {"configurable": {"thread_id": str(thread_id)}}

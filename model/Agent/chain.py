@@ -11,7 +11,9 @@ from langchain.prompts import (
 import json
 import logging
 from langchain.schema import HumanMessage, AIMessage, SystemMessage
+from langsmith import traceable
 
+from .load_data import load_and_process_data, create_vectorstore
 queries_path="data/queries.json"
 guide_path="data/guide.json"
 
@@ -35,7 +37,8 @@ class Chain:
 
         self.llm = ChatOpenAI(model="gpt-4o", temperature=0)
         self.vectorstore_dir = "data/vectorstore"
-
+    
+    @traceable  
     def general_chain(self, input: str, history: list):
         system_prompt = r"Answer the following question using the following context: \n\n{context}" 
 
@@ -55,6 +58,38 @@ class Chain:
 
         final_prompt = ChatPromptTemplate.from_messages(messages).partial(
             context=read_file_to_string(guide_path)
+        )
+
+        chain = (
+            {"input": RunnablePassthrough()} | final_prompt | self.llm
+        )
+
+        response = chain.invoke(input)
+
+        return response.content
+    
+    @traceable
+    def rag_chain(self, input: str, history: list):
+        vs = create_vectorstore(persist_directory=self.vectorstore_dir, documents=load_and_process_data(guide_path))
+        system_prompt = "Answer the following question using the following context: \n\n{context}" 
+
+        history_messages = []
+        for msg in history[:-1]: 
+            if isinstance(msg, HumanMessage):
+                history_messages.append(("human", msg.content))
+            elif isinstance(msg, AIMessage):
+                history_messages.append(("assistant", msg.content))
+
+        messages = [
+            SystemMessagePromptTemplate.from_template(system_prompt),
+            *history_messages,  # Spread the history messages
+            ("human", "{input}")  # Current input
+        ]
+
+        retrived_docs = vs.invoke(input, k=3)
+        retrived_text = [doc.page_content for doc in retrived_docs]
+        final_prompt = ChatPromptTemplate.from_messages(messages).partial(
+            context=retrived_text
         )
 
         chain = (

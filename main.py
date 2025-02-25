@@ -8,7 +8,7 @@ import threading
 
 
 from controller.controller import Orchestrator
-\
+
 load_dotenv(find_dotenv())
 
 class UTF8LogFilter(logging.Filter):
@@ -60,6 +60,8 @@ logging_config = {
     }
 }
 
+# Create logs directory if it doesn't exist
+os.makedirs('data/logs', exist_ok=True)
 logging.config.dictConfig(logging_config)
 
 # Function to run the FastAPI app
@@ -80,3 +82,4 @@ def run_view(title="Bot name"):
 if __name__ == "__main__":
     orchestrator = Orchestrator()
     run_view("Novella") # use for streamlit
+    
